@@ -13,18 +13,18 @@ my @months = ("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", 
 my @years = (1982 .. 2014);
 
 
-open(my $amphibianResultsFH, ">", "AmphibianResults.txt") or die "Couldn't open AmphibianResults.txt for writing: $!\n";
-$amphibianResultsFH->autoflush(1); # This allows you to monitor progress as the months are being completed
+open(my $reptileResultsFH, ">", "ReptileResults.txt") or die "Couldn't open ReptileResults.txt for writing: $!\n";
+$reptileResultsFH->autoflush(1); # This allows you to monitor progress as the months are being completed
 
 foreach my $year (@years) {
     foreach my $month (@months) {
         my $minDate = $year . "/" . $month . "/01";
         my $maxDate = $year . "/" . $month . "/31"; # This works because NCBI is fine with you saying February 31, for instance
-	
+        
         my $factory = Bio::DB::EUtilities->new(-eutil   => 'esearch',
                                                -email   => 'youremail@address.com', # Change this to your email address
                                                -db      => 'nucleotide',
-                                               -term    => 'Amphibia[Organism]',
+                                               -term    => 'Reptilia[Organism]',
                                                -mindate => $minDate,
                                                -maxdate => $maxDate,
                                                -datetype => 'pdat',
@@ -38,11 +38,11 @@ foreach my $year (@years) {
                                  -history   => $hist);
         my $retry = 0;
         my ($retmax, $retstart) = (10000,0); # 10,000 is the maximum allowed by NCBI
-        
+            
         # This is a temporary file that will hold the sequences for each month (and will be deleted at the
         # end of processing each month)
-        open (my $out, ">", "seqsAmphib.txt") || die "Couldn't open seqsAmphib.txt for writing: $!\n";
-        
+        open (my $out, ">", "seqsRep.txt") || die "Couldn't open seqs.txt for writing: $!\n";
+
         # Here's where we actually pull the EST sequences from the NCBI server and write them to file
         RETRIEVE_SEQS:
         while ($retstart < $count) {
@@ -66,7 +66,7 @@ foreach my $year (@years) {
         my $factoryEST = Bio::DB::EUtilities->new(-eutil   => 'esearch',
                                                -email   => 'youremail@address.com', # Change this to your email address
                                                -db      => 'nucest',
-                                               -term    => 'Amphibia[Organism]',
+                                               -term    => 'Reptilia[Organism]',
                                                -mindate => $minDate,
                                                -maxdate => $maxDate,
                                                -datetype => 'pdat',
@@ -100,19 +100,19 @@ foreach my $year (@years) {
 
         close $out;
         
-
+        
         # Now that we've printed all of the results for our query into the seqs.txt file, we just have to count how
     	# many bases are in that file for the total bases in that month
         my $monthBaseCounter = 0;
-        my $seqIn = Bio::SeqIO->new(-file => "seqsAmphib.txt",
+        my $seqIn = Bio::SeqIO->new(-file => "seqsRep.txt",
                                     -format => "fasta");
-    
+        
     	# Go through each sequence in the file, one by one, and add the length of that sequence to the counter
         while (my $seq = $seqIn->next_seq()) {
-            $monthBaseCounter += $seq->length(); 
+            $monthBaseCounter += $seq->length();
         }
         
-        print $amphibianResultsFH "$year-$month\t$monthBaseCounter\n"; # This is the raw data we use to make our plots
-        unlink("seqsAmphib.txt"); # We'll recreate this file for the next month
+        print $reptileResultsFH "$year-$month\t$monthBaseCounter\n";  # This is the raw data we use to make our plots
+        unlink("seqsRep.txt");  # We'll recreate this file for the next month
     }
 }
